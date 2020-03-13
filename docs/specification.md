@@ -1,4 +1,4 @@
-JuicyDB is a simple relational database. In particular, it will support:
+juicydb is a simple relational database. In particular, it will support:
 - (atleast a subset of) SQL
 - [indexing](https://en.wikipedia.org/wiki/Database_index)
 - (hopefully) a rudimentary query planner/optimizer
@@ -36,9 +36,9 @@ making the time complexities of the queries follow the above table. Note that
 when indexing over columns with non-unique values, the above time complexities
 may in general fail.
 
-JuicyDB will accept SQL queries over the command-line and (potentially) over a
+juicydb will accept SQL queries over the command-line and (potentially) over a
 UNIX socket. The full list of supported queries will be determined at a later
-date. In addition JuicyDB will (hopefully) support certain query optimizations
+date. In addition juicydb will (hopefully) support certain query optimizations
 such as join ordering.
 
 As sources to guide the implementation, I will be referring to the following
