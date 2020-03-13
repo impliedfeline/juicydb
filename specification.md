@@ -15,6 +15,12 @@ operations with the following time complexities:
 - search: `O(log n)`
 - insert: `O(log n)`
 - delete: `O(log n)`
+The use of B-trees in representing data in a database is a well-known technique
+and implemented in several production databases, including
+[PostgreSQL](https://www.postgresql.org/docs/9.2/indexes-types.html) and the
+[Oracle
+Database](https://docs.oracle.com/cd/E11882_01/server.112/e40540/indexiot.htm#CNCPT721).
+Support for other indexing schemes may be implemented as time allows.
 
 Each row in a table has a unique identifier, referred to as the primary key.
 The primary key acts as an index for the data in a table, meaning that the data
@@ -23,15 +29,17 @@ single primary key will have the above time complexities.
 
 Querying over non-indexed data will always have a worst case time complexity of
 `O(n)`. To speed up queries over columns other than the primary key, the tables
-may be indexed. Indexing over a column constructs a B-tree that has as it's
-values records consisting of the given column and a pointer to the row in the
-original table. The data in the B-tree will be sorted based on the column,
+may be indexed by a column. Indexing by a column constructs a B-tree that has as
+it's values records consisting of the given column and a pointer to the row in
+the original table. The data in the B-tree will be sorted based on the column,
 making the time complexities of the queries follow the above table. Note that
 when indexing over columns with non-unique values, the above time complexities
 may in general fail.
 
-In addition JuicyDB will (hopefully) support certain query optimizations such as
-join ordering.
+JuicyDB will accept SQL queries over the command-line and (potentially) over a
+UNIX socket. The full list of supported queries will be determined at a later
+date. In addition JuicyDB will (hopefully) support certain query optimizations
+such as join ordering.
 
 As sources to guide the implementation, I will be referring to the following
 literature (where appropriate):
