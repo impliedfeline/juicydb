@@ -47,8 +47,10 @@ literature (where appropriate):
 - [Architecture of a Database
   System](https://dsf.berkeley.edu/papers/fntdb07-architecture.pdf)
 - [Readings in Database Systems](http://www.redbook.io/)
+
 the website:
 - [Let's Build a Simple Database](https://cstack.github.io/db_tutorial/)
+
 and the documentation and implementations of:
 - SQLite
 - PostgreSQL
