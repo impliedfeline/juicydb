@@ -1,4 +1,5 @@
-juicydb is a simple relational database. In particular, it will support:
+juicydb is a simple relational database written in Rust. In particular, it will
+support:
 - (atleast a subset of) SQL
 - [indexing](https://en.wikipedia.org/wiki/Database_index)
 - (hopefully) a rudimentary query planner/optimizer
