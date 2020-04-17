@@ -1,0 +1,14 @@
+{
+  "files": [
+    {"file": "/home/impliedfeline/Programming/rust/juicydb/src/db.rs", "percent_covered": "0.00", "covered_lines": "0", "total_lines": "22"},
+    {"file": "/home/impliedfeline/Programming/rust/juicydb/src/main.rs", "percent_covered": "0.00", "covered_lines": "0", "total_lines": "23"},
+    {"file": "/home/impliedfeline/Programming/rust/juicydb/src/parser.rs", "percent_covered": "0.00", "covered_lines": "0", "total_lines": "285"}
+  ],
+  "percent_covered": "0.00",
+  "covered_lines": 0,
+  "total_lines": 330,
+  "percent_low": 25,
+  "percent_high": 75,
+  "command": "juicydb-95ce3ff91477d301",
+  "date": "2020-04-17 23:01:01"
+}
