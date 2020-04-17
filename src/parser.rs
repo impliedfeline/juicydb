@@ -2,7 +2,8 @@ use crate::db::*;
 use std::convert::TryInto;
 use std::fmt;
 
-#[derive(Debug)]
+/// Datatype representing an SQL-statement.
+#[derive(Debug, PartialEq)]
 pub enum Statement {
     Select {
         columns: Vec<Identifier>,
@@ -21,7 +22,10 @@ pub enum Statement {
 
 type Identifier = String;
 
-#[derive(Debug)]
+/// Condition in a 'where'-clause of certain SQL-statements. Essentially an
+/// AST representing different kinds of logical formulas one can get combining field selectors
+/// (table.column) and (in)equalities.
+#[derive(Debug, PartialEq)]
 pub enum Condition {
     Literal(ConditionLiteral),
     Not(Box<Condition>),
@@ -29,13 +33,16 @@ pub enum Condition {
     Or(Box<Condition>, Box<Condition>),
 }
 
-#[derive(Debug)]
+/// Field selector, e.g. table.column
+#[derive(Debug, PartialEq)]
 pub struct Selector {
     table: Identifier,
     field: Identifier,
 }
 
-#[derive(Debug)]
+/// 'Literal' in a [`Condition`] AST. Essentially some form of (in)equality
+/// over a database field selector.
+#[derive(Debug, PartialEq)]
 pub enum ConditionLiteral {
     Eq(Selector, Selector),
     Neq(Selector, Selector),
@@ -45,23 +52,26 @@ pub enum ConditionLiteral {
     Gte(Selector, Selector),
 }
 
-#[derive(Debug)]
+/// Datatype for meta-commands accepted by the juicydb REPL.
+#[derive(Debug, PartialEq)]
 pub enum MetaCommand {
     Exit,
     Print,
 }
 
-#[derive(Debug)]
+/// A user-provided command to the juicydb REPL. Either a [`MetaCommand`] or an SQL-[`Statement`]
+#[derive(Debug, PartialEq)]
 pub enum Command {
     MetaCommand(MetaCommand),
     Statement(Statement),
 }
 
+/// Parser wrapper for string data
 pub struct Parser<'a> {
     input: &'a str,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParseError {
     FailedToLex,
     InvalidIdentifier,
@@ -108,11 +118,6 @@ impl fmt::Display for ParseError {
             Self::MissingType => write!(f, "Missing type in column list"),
         }
     }
-}
-
-enum Sign {
-    Positive,
-    Negative,
 }
 
 fn char_to_i64(input: char) -> i64 {
@@ -195,12 +200,12 @@ impl<'a> Parser<'a> {
     fn parse_text(&mut self) -> ParseResult<String> {
         let mut chars = self.input.chars();
         if let Some(c) = chars.nth(0) {
-            if c == '"' {
-                let count = 1 + chars.take_while(|&c| c != '"').count();
-                if let Some('"') = self.input.chars().nth(count) {
+            if c == '\'' {
+                let count = 1 + chars.take_while(|&c| c != '\'').count();
+                if let Some('\'') = self.input.chars().nth(count) {
                     let (parsed, input) = self.input.split_at(count + 1);
                     self.input = input;
-                    Ok(String::from(parsed))
+                    Ok(String::from(&parsed[1..count]))
                 } else {
                     Err(ParseError::RunawayText)
                 }
@@ -415,5 +420,129 @@ impl<'a> Parser<'a> {
 
     fn parse_condition(&mut self) -> ParseResult<Condition> {
         todo!();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_select_with_single_column() {
+        let stmt = Parser::new("select (col) from tbl;").parse_command();
+        let select = Command::Statement(Statement::Select {
+            columns: vec![String::from("col")],
+            table: String::from("tbl"),
+            condition: None,
+        });
+        assert_eq!(stmt, Ok(select));
+    }
+
+    #[test]
+    fn parse_select_with_multiple_columns() {
+        let stmt = Parser::new("select (col_1, col_2, col_3) from tbl;").parse_command();
+        let select = Command::Statement(Statement::Select {
+            columns: vec![
+                String::from("col_1"),
+                String::from("col_2"),
+                String::from("col_3"),
+            ],
+            table: String::from("tbl"),
+            condition: None,
+        });
+        assert_eq!(stmt, Ok(select));
+    }
+
+    #[test]
+    fn parse_create_table_with_single_column() {
+        let stmt = Parser::new("create table tbl (col integer);").parse_command();
+        let create = Command::Statement(Statement::CreateTable {
+            table: String::from("tbl"),
+            columns: vec![(String::from("col"), DBType::Integer)],
+        });
+        assert_eq!(stmt, Ok(create));
+    }
+
+    #[test]
+    fn parse_create_table_with_multiple_columns() {
+        let stmt = Parser::new("create table tbl (col_1 integer, col_2 text, col_3 text);")
+            .parse_command();
+        let create = Command::Statement(Statement::CreateTable {
+            table: String::from("tbl"),
+            columns: vec![
+                (String::from("col_1"), DBType::Integer),
+                (String::from("col_2"), DBType::Text),
+                (String::from("col_3"), DBType::Text),
+            ],
+        });
+        assert_eq!(stmt, Ok(create));
+    }
+
+    #[test]
+    fn parse_insert_into_with_single_column() {
+        let stmt = Parser::new("insert into tbl values (0);").parse_command();
+        let insert = Command::Statement(Statement::InsertInto {
+            table: String::from("tbl"),
+            values: vec![DBValue::Integer(0)],
+        });
+        assert_eq!(stmt, Ok(insert));
+    }
+
+    #[test]
+    fn parse_insert_into_with_multiple_columns() {
+        let stmt = Parser::new("insert into tbl values (0, 'foo', 'bar');").parse_command();
+        let insert = Command::Statement(Statement::InsertInto {
+            table: String::from("tbl"),
+            values: vec![DBValue::Integer(0),
+            DBValue::Text(String::from("foo")),
+            DBValue::Text(String::from("bar"))],
+        });
+        assert_eq!(stmt, Ok(insert));
+    }
+
+    #[test]
+    fn parse_meta_command_exit() {
+        let cmd = Parser::new(".exit").parse_command();
+        let exit = Command::MetaCommand(MetaCommand::Exit);
+        assert_eq!(cmd, Ok(exit));
+    }
+
+    #[test]
+    fn parse_meta_command_print() {
+        let cmd = Parser::new(".print").parse_command();
+        let print = Command::MetaCommand(MetaCommand::Print);
+        assert_eq!(cmd, Ok(print));
+    }
+
+    #[test]
+    fn invalid_identifier_error() {
+        let number = Parser::new("select (0) from tbl;").parse_command();
+        let symbol = Parser::new("create table & (col integer);").parse_command();
+        let underscore = Parser::new("insert into _ (0);").parse_command();
+        assert_eq!(number, Err(ParseError::InvalidIdentifier));
+        assert_eq!(symbol, Err(ParseError::InvalidIdentifier));
+        assert_eq!(underscore, Err(ParseError::InvalidIdentifier));
+    }
+
+    #[test]
+    fn invalid_value_error() {
+        let underscore = Parser::new("insert into tbl values (_);").parse_command();
+        let nil = Parser::new("insert into tbl values ();").parse_command();
+        let bare_string = Parser::new("insert into tbl values (foo);").parse_command();
+        let dash = Parser::new("insert into tbl values (-);").parse_command();
+        assert_eq!(underscore, Err(ParseError::InvalidValue));
+        assert_eq!(nil, Err(ParseError::InvalidValue));
+        assert_eq!(bare_string, Err(ParseError::InvalidValue));
+        assert_eq!(dash, Err(ParseError::InvalidValue));
+    }
+
+    #[test]
+    fn missing_semicolon_error() {
+        let stmt_select = Parser::new("select (col) from tbl").parse_command();
+        let stmt_create = Parser::new("create table tbl (col integer)").parse_command();
+        let stmt_insert = Parser::new("insert into tbl values (0)").parse_command();
+        assert_eq!(stmt_select, Err(ParseError::MissingSemicolon));
+        assert_eq!(stmt_create, Err(ParseError::MissingSemicolon));
+        assert_eq!(stmt_insert, Err(ParseError::MissingSemicolon));
     }
 }

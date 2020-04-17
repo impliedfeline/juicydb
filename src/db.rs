@@ -1,9 +1,9 @@
 use std::rc::Rc;
 use std::collections::BTreeMap;
-// Conceptually, a database is a collection of tables, a table is a collection of rows and a row is
-// a collection of supported values with some means of indexing the values based on the column
-// identifier
 
+/// Conceptually, a [`Database`] is a collection of [`Table`]s, a [`Table`] is a collection of
+/// [`Row`]s and a [`Row`] is a collection of supported values with some means of indexing the
+/// values based on the column identifier
 pub struct Database {
     name: String,
     tables: Vec<(String, Table)>,
@@ -52,13 +52,13 @@ impl Row {
     }
 }
 
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub enum DBType {
     Integer,
     Text,
 }
 
-#[derive(Clone,Debug)]
+#[derive(Clone,Debug,PartialEq)]
 pub enum DBValue {
     Integer(i64),
     Text(String),

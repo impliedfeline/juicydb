@@ -1,4 +1,4 @@
-use juicydb::parser;
+use juicydb::parser::*;
 use std::io::{self, Write};
 
 fn main() {
@@ -16,11 +16,19 @@ fn main() {
             break;
         }
 
-        let mut parser = parser::Parser::new(&input);
+        let mut parser = Parser::new(&input);
         let stmt = parser.parse_command();
 
         match stmt {
-            Ok(stmt) => println!("{:#?}", stmt),
+            Ok(stmt) => match stmt {
+                Command::Statement(stmt) => println!("{:#?}", stmt),
+                Command::MetaCommand(cmd) => {
+                    match cmd {
+                        MetaCommand::Exit => return,
+                        MetaCommand::Print => todo!(),
+                    }
+                }
+            },
             Err(err) => println!("Error: {}", err),
         }
     }

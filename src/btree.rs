@@ -14,7 +14,8 @@ use crate::db::*;
 /// less than the key right of the child. In juicydb, k == 255, meaning that each node has 255
 /// keys and 256 children. This property of splitting to multiple children, referred to as fanout,
 /// is typically high in b-trees to reduce the height of built trees. Smaller height means that we
-/// need fewer "jumps" in the tree to locate a key, which is expensive with on-disk data structures
+/// need fewer "jumps" in the tree to locate a key and thus fewer disk seeks, which are relatively
+/// expensive.
 ///
 /// Each file begins with a (4kb) header node, consisting of e.g. schema information. The exact format
 /// for headers is under construction. The header is followed by 1 or more b-tree nodes. For the
