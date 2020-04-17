@@ -8,7 +8,7 @@ How did the development progress;
   b-tree specification that need to be ironed out
 What did I learn:
 - B-tree implementation techniques, slotted pages, etc. Most of these points are
-  elaborated on in the documentation at [`btree.rs`](src/btree.rs)
+  elaborated on in the documentation at [`btree.rs`](../src/btree.rs)
 Problems:
 - I'm late with the project so I have some catching up to do; in general though
   I know everything I need to do going forward. Biggest problem with the project
