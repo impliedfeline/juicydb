@@ -7,3 +7,4 @@
   + [Week 6](docs/week6-report.md)
 - [Project specification](docs/specification.md)
 - [Implementation notes](docs/implementation.md)
+- [Testing notes](docs/testing.md)
