@@ -1,5 +1,5 @@
-use std::fs::File;
 use crate::db::*;
+use std::fs::File;
 
 /// B-tree datatype, consisting of a file handle and an in-memory root node. B-trees can be seen as
 /// an on-disk data structure for tables. Each table in juicydb is stored in it's own file and
@@ -23,7 +23,27 @@ use crate::db::*;
 
 pub struct BTree {
     file: File,
+    schema: Schema,
     root: BTreeNode,
+}
+
+impl BTree {
+    pub fn serialize(&self) {
+        let header_page: [u8; 4096] = {
+            let schema_text = &self
+                .schema
+                .iter()
+                .map(|(column_name, db_type)| format!("{} {}", column_name, db_type))
+                .collect::<Vec<String>>()
+                .join(", ");
+
+            let mut page = [0; 4096];
+            for (i, byte) in schema_text.bytes().enumerate().take(4096) {
+                page[i] = byte;
+            }
+            page
+        };
+    }
 }
 
 /// A B-tree node datatype. A node is either internal to the tree, or a leaf node which represents
@@ -42,7 +62,7 @@ pub struct BTree {
 /// table can hold at most 2^32 = 4294967296 rows, and the file representing a table can have a
 /// maximum file size of 4kb * 2^32 ~= 16 terabytes.
 pub enum BTreeNode {
-    Internal { cells: Cell<Key,PageId> },
+    Internal { cells: Cell<Key, PageId> },
     Leaf { cells: Cell<Key, Row> },
 }
 
@@ -53,13 +73,18 @@ type PageId = u32;
 pub struct Cell<K, V> {
     key: K,
     value: V,
-    left: Option<Box<Cell<K,V>>>,
-    right: Option<Box<Cell<K,V>>>,
+    left: Option<Box<Cell<K, V>>>,
+    right: Option<Box<Cell<K, V>>>,
 }
 
-impl<K, V> Cell<K,V> {
+impl<K, V> Cell<K, V> {
     pub fn new(key: K, value: V) -> Self {
-        Self { key, value, left: None, right: None }
+        Self {
+            key,
+            value,
+            left: None,
+            right: None,
+        }
     }
 
     pub fn get(&self, key: &K) -> Option<&V>
@@ -97,5 +122,10 @@ impl<K, V> Cell<K,V> {
         }
     }
 
+    pub fn remove(&mut self, key: K)
+    where
+        K: PartialEq + PartialOrd,
+    {
+        todo!();
+    }
 }
-

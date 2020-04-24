@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::fmt;
 use std::collections::BTreeMap;
 
 /// Conceptually, a [`Database`] is a collection of [`Table`]s, a [`Table`] is a collection of
@@ -20,9 +21,11 @@ impl Database {
 
 // TODO: support indexing with B-trees
 pub struct Table {
-    schema: Vec<(String, DBType)>,
+    schema: Schema,
     rows: Vec<Rc<Row>>,
 }
+
+pub type Schema = Vec<(String, DBType)>;
 
 impl Table {
     pub fn get_column_type(&self, id: &str) -> Option<DBType> {
@@ -56,6 +59,15 @@ impl Row {
 pub enum DBType {
     Integer,
     Text,
+}
+
+impl fmt::Display for DBType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DBType::Integer => write!(f, "integer"),
+            DBType::Text => write!(f, "text"),
+        }
+    }
 }
 
 #[derive(Clone,Debug,PartialEq)]
