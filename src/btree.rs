@@ -27,6 +27,7 @@ pub struct BTree {
     root: BTreeNode,
 }
 
+/*
 impl BTree {
     pub fn serialize(&self) {
         let header_page: [u8; 4096] = {
@@ -45,6 +46,7 @@ impl BTree {
         };
     }
 }
+*/
 
 /// A B-tree node datatype. A node is either internal to the tree, or a leaf node which represents
 /// a row in the database. The page format in juicydb is referred to as slotted pages; this means

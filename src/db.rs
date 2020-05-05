@@ -1,6 +1,4 @@
-use std::rc::Rc;
 use std::fmt;
-use std::collections::BTreeMap;
 
 /// Conceptually, a [`Database`] is a collection of [`Table`]s, a [`Table`] is a collection of
 /// [`Row`]s and a [`Row`] is a collection of supported values with some means of indexing the
@@ -13,49 +11,93 @@ pub struct Database {
 impl Database {
     pub fn get_table(&mut self, id: &str) -> Option<&mut Table> {
         for (name, table) in &mut self.tables {
-            if name == id { return Some(table) } 
+            if name == id {
+                return Some(table);
+            }
         }
         None
     }
 }
 
-// TODO: support indexing with B-trees
+#[derive(Debug)]
 pub struct Table {
     schema: Schema,
-    rows: Vec<Rc<Row>>,
+    rows: Vec<Row>,
 }
 
-pub type Schema = Vec<(String, DBType)>;
+#[derive(Debug)]
+pub struct Schema {
+    schema: Vec<(String, DBType)>,
+}
+
+impl Schema {
+    pub fn new() -> Self {
+        Self { schema: Vec::new() }
+    }
+
+    pub fn from(schema: Vec<(String, DBType)>) -> Self {
+        Self { schema }
+    }
+
+    pub fn get_field_type(&self, id: &str) -> Option<DBType> {
+        for (field, db_type) in &self.schema {
+            if field == id {
+                return Some(*db_type);
+            }
+        }
+        None
+    }
+
+    pub fn get_column_indices(&self, columns: Vec<String>) -> Option<Vec<usize>> {
+        let mut indices = Vec::new();
+        for col in columns {
+            let index = &self.schema.iter().position(|(f, _)| f == &col)?;
+            indices.push(*index);
+        }
+        Some(indices)
+    }
+
+    pub fn type_check(&self, columns: Vec<DBType>) -> Option<()> {
+        if columns.len() != self.schema.len() {
+            return None;
+        }
+
+        for (t1, t2) in self.schema.iter().map(|(_, t)| t).zip(columns) {
+            if *t1 != t2 {
+                return None;
+            }
+        }
+        Some(())
+    }
+}
+pub type Row = Vec<DBValue>;
 
 impl Table {
-    pub fn get_column_type(&self, id: &str) -> Option<DBType> {
-        for (name, db_type) in &self.schema {
-            if name == id { return Some(*db_type) } 
+    pub fn new(schema: Schema) -> Self {
+        Self {
+            schema,
+            rows: Vec::new(),
         }
-        None
     }
 
-    pub fn rows(&mut self) -> &mut Vec<Rc<Row>> {
+    pub fn schema(&self) -> &Schema {
+        &self.schema
+    }
+
+    pub fn rows(&self) -> &Vec<Row> {
+        &self.rows
+    }
+
+    pub fn rows_mut(&mut self) -> &mut Vec<Row> {
         &mut self.rows
     }
-}
 
-pub struct Index(BTreeMap<DBValue, Rc<Row>>);
-
-pub struct Row {
-    values: Vec<(String, DBValue)>,
-}
-
-impl Row {
-    pub fn get(&mut self, column: &str) -> Option<&mut DBValue> {
-        for (name, value) in &mut self.values {
-            if name == column { return Some(value) } 
-        }
-        None
+    pub fn push(&mut self, row: Row) {
+        self.rows.push(row);
     }
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DBType {
     Integer,
     Text,
@@ -70,9 +112,26 @@ impl fmt::Display for DBType {
     }
 }
 
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DBValue {
     Integer(i64),
     Text(String),
 }
 
+impl DBValue {
+    pub fn val_to_type(&self) -> DBType {
+        match &self {
+            DBValue::Integer(_) => DBType::Integer,
+            DBValue::Text(_) => DBType::Text,
+        }
+    }
+}
+
+impl fmt::Display for DBValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DBValue::Integer(i) => write!(f, "{}", i),
+            DBValue::Text(text) => write!(f, "{}", text),
+        }
+    }
+}
