@@ -24,29 +24,110 @@ use std::fs::File;
 pub struct BTree {
     file: File,
     schema: Schema,
-    root: BTreeNode,
 }
 
-/*
-impl BTree {
-    pub fn serialize(&self) {
-        let header_page: [u8; 4096] = {
-            let schema_text = &self
-                .schema
-                .iter()
-                .map(|(column_name, db_type)| format!("{} {}", column_name, db_type))
-                .collect::<Vec<String>>()
-                .join(", ");
+pub struct KeyCell {
+    pub key: u32,
+    pub page_id: u32,
+}
 
-            let mut page = [0; 4096];
-            for (i, byte) in schema_text.bytes().enumerate().take(4096) {
-                page[i] = byte;
+pub enum BTreeNode {
+    Internal {
+        freecells: [bool; 256],
+        pointers: [u8; 256],
+        cells: [KeyCell; 256],
+    },
+    Leaf {
+        freecells: [bool; 64],
+        pointers: [u8; 64],
+        data_cells: [Row; 64],
+    },
+}
+
+impl BTreeNode {
+    pub fn read(input: [u8; 4096]) -> Self {
+        match input[0] {
+            b'0' => {
+                let freecells = {
+                    let mut bool_array = [false; 256];
+                    for (i, byte) in input[1..257].iter().enumerate() {
+                        match byte {
+                            b'0' => bool_array[i] = false,
+                            b'1' => bool_array[i] = true,
+                            _ => panic!("Invalid freecell list"),
+                        }
+                    }
+                    bool_array
+                };
+                let pointers = {
+                    let mut byte_array = [b'0'; 256];
+                    for (i, byte) in input[1792..2048].iter().enumerate() {
+                        byte_array[i] = *byte;
+                    }
+                    byte_array
+                };
+                let cells = {
+                    let mut cell_array = [KeyCell { key: 0, page_id: 0 }; 256];
+                    for i in 0..256 {
+                        let mut key_bytes = [b'0', b'0', b'0', b'0'];
+                        for (i, byte) in input[(i * 8 + 2048)..(i * 8 + 2052)].iter().enumerate() {
+                            key_bytes[i] = *byte;
+                        }
+                        let mut page_id_bytes = [b'0', b'0', b'0', b'0'];
+                        for (i, byte) in input[(i * 8 + 2052)..(i * 8 + 2056)].iter().enumerate() {
+                            page_id_bytes[i] = *byte;
+                        }
+                        let key = ((key_bytes[0] as u32) << 24)
+                            | ((key_bytes[1] as u32) << 16)
+                            | ((key_bytes[2] as u32) << 8)
+                            | ((key_bytes[3] as u32) << 0);
+                        let page_id = ((page_id_bytes[0] as u32) << 24)
+                            | ((page_id_bytes[1] as u32) << 16)
+                            | ((page_id_bytes[2] as u32) << 8)
+                            | ((page_id_bytes[3] as u32) << 0);
+                        cell_array[i] = KeyCell { key, page_id };
+                    }
+                    cell_array
+                };
+                BTreeNode::Internal {
+                    freecells,
+                    pointers,
+                    cells,
+                }
             }
-            page
-        };
+            b'1' => {
+                let freecells = {
+                };
+                let pointers = {
+                };
+                let data_cells = {
+                };
+            }
+            _ => panic!("Invalid enum flag"),
+        }
     }
 }
-*/
+
+impl BTree {
+    /*
+        pub fn serialize(&self) {
+            let header_page: [u8; 4096] = {
+                let schema_text = &self
+                    .schema
+                    .iter()
+                    .map(|(column_name, db_type)| format!("{} {}", column_name, db_type))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                let mut page = [0; 4096];
+                for (i, byte) in schema_text.bytes().enumerate().take(4096) {
+                    page[i] = byte;
+                }
+                page
+            };
+        }
+    */
+}
 
 /// A B-tree node datatype. A node is either internal to the tree, or a leaf node which represents
 /// a row in the database. The page format in juicydb is referred to as slotted pages; this means
@@ -63,14 +144,17 @@ impl BTree {
 /// integers. Keys and page ID's are both represented as unsigned 32-bit integers, meaning that a
 /// table can hold at most 2^32 = 4294967296 rows, and the file representing a table can have a
 /// maximum file size of 4kb * 2^32 ~= 16 terabytes.
+/*
 pub enum BTreeNode {
     Internal { cells: Cell<Key, PageId> },
     Leaf { cells: Cell<Key, Row> },
 }
+*/
 
 type Key = u32;
 type PageId = u32;
 
+/*
 /// An in-memory datastructure representing a cell in a page. Essentially an AVL-tree.
 pub struct Cell<K, V> {
     key: K,
@@ -131,3 +215,4 @@ impl<K, V> Cell<K, V> {
         todo!();
     }
 }
+*/

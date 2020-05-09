@@ -3,6 +3,8 @@ use std::fmt;
 /// Conceptually, a [`Database`] is a collection of [`Table`]s, a [`Table`] is a collection of
 /// [`Row`]s and a [`Row`] is a collection of supported values with some means of indexing the
 /// values based on the column identifier
+/*
+ * probably not implementing support for multiple in-memory databases
 pub struct Database {
     name: String,
     tables: Vec<(String, Table)>,
@@ -18,6 +20,7 @@ impl Database {
         None
     }
 }
+*/
 
 #[derive(Debug)]
 pub struct Table {
